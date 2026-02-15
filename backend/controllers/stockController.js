@@ -64,3 +64,26 @@ exports.updateStock = async (req, res) => {
   }
 };
 
+// Get portfolio summary
+exports.getSummary = async (req, res) => {
+  try {
+    const stocks = await Stock.find();
+
+    let totalInvestment = 0;
+    let totalQuantity = 0;
+
+    stocks.forEach(stock => {
+      totalInvestment += stock.quantity * stock.buyPrice;
+      totalQuantity += stock.quantity;
+    });
+
+    res.status(200).json({
+      totalInvestment,
+      totalStocks: stocks.length,
+      totalQuantity
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error calculating summary" });
+  }
+};

@@ -5,19 +5,23 @@ const {
   addStock,
   getStocks,
   deleteStock,
-  updateStock
+  updateStock,
+  getSummary
 } = require("../controllers/stockController");
 
-// POST - Add stock
+// ➕ Add new stock
 router.post("/", addStock);
 
-// GET - Get all stocks
+// 📊 Get portfolio summary (MUST come before /:id routes)
+router.get("/summary", getSummary);
+
+// 📄 Get all stocks
 router.get("/", getStocks);
 
-// DELETE - Delete stock
+// ❌ Delete stock by ID
 router.delete("/:id", deleteStock);
 
-// PUT - Update stock
+// ✏️ Update stock by ID
 router.put("/:id", updateStock);
 
 module.exports = router;
