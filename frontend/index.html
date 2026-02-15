@@ -16,14 +16,18 @@
     <input type="text" id="name" class="form-control mb-2" placeholder="Stock Name">
     <input type="number" id="quantity" class="form-control mb-2" placeholder="Quantity">
     <input type="number" id="buyPrice" class="form-control mb-2" placeholder="Buy Price">
-    <button onclick="addStock()" class="btn btn-primary">Add Stock</button>
+    <input type="number" id="currentPrice" class="form-control mb-2" placeholder="Current Price">
+    <button id="submitBtn" onclick="addStock()" class="btn btn-primary">Add Stock</button>
   </div>
   <div class="card p-3 mb-4">
-    <h4>Portfolio Summary</h4>
-    <p>Total Investment: ₹ <span id="totalInvestment">0</span></p>
-    <p>Total Stocks: <span id="totalStocks">0</span></p>
-    <p>Total Quantity: <span id="totalQuantity">0</span></p>
+  <h4>Portfolio Summary</h4>
+  <p>Total Investment: ₹ <span id="totalInvestment">0</span></p>
+  <p>Total Portfolio Value: ₹ <span id="totalPortfolioValue">0</span></p>
+  <p>Total Profit/Loss: ₹ <span id="totalProfitLoss">0</span></p>
+  <p>Total Stocks: <span id="totalStocks">0</span></p>
+  <p>Total Quantity: <span id="totalQuantity">0</span></p>
   </div>
+
 
   <!-- Stock Table -->
   <table class="table table-bordered">

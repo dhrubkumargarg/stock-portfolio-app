@@ -3,21 +3,25 @@ const Stock = require("../models/Stock");
 // Add new stock
 exports.addStock = async (req, res) => {
   try {
-    const { name, quantity, buyPrice } = req.body;
+    const { name, quantity, buyPrice, currentPrice } = req.body;
 
     const newStock = new Stock({
       name,
       quantity,
-      buyPrice
+      buyPrice,
+      currentPrice
     });
 
     const savedStock = await newStock.save();
 
     res.status(201).json(savedStock);
+
   } catch (error) {
+    console.error(error);   // 🔥 important for debugging
     res.status(500).json({ message: "Error adding stock" });
   }
 };
+
 
 // Get all stocks
 exports.getStocks = async (req, res) => {
@@ -59,10 +63,13 @@ exports.updateStock = async (req, res) => {
     }
 
     res.status(200).json(updatedStock);
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Error updating stock" });
   }
 };
+
 
 // Get portfolio summary
 exports.getSummary = async (req, res) => {
@@ -71,14 +78,20 @@ exports.getSummary = async (req, res) => {
 
     let totalInvestment = 0;
     let totalQuantity = 0;
+    let totalPortfolioValue = 0;
+    let totalProfitLoss = 0;
 
     stocks.forEach(stock => {
       totalInvestment += stock.quantity * stock.buyPrice;
       totalQuantity += stock.quantity;
+      totalPortfolioValue += stock.currentPrice * stock.quantity;
+      totalProfitLoss += (stock.currentPrice - stock.buyPrice) * stock.quantity;
     });
 
     res.status(200).json({
       totalInvestment,
+      totalPortfolioValue,
+      totalProfitLoss,
       totalStocks: stocks.length,
       totalQuantity
     });
