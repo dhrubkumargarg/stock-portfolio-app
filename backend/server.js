@@ -5,6 +5,7 @@ const cors = require("cors");
 
 const connectDB = require("./config/db");   // Import DB connection
 const stockRoutes = require("./routes/stockRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 // Stock routes
 app.use("/api/stocks", stockRoutes);
+app.use("/api/auth", authRoutes);
 
 const PORT = 5000;
 
