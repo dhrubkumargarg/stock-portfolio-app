@@ -10,38 +10,60 @@
 
   <h1 class="text-center mb-4">Stock Portfolio</h1>
 
-  <!-- Add Stock Form -->
-  <div class="card p-3 mb-4">
-    <h4>Add Stock</h4>
-    <input type="text" id="name" class="form-control mb-2" placeholder="Stock Name">
-    <input type="number" id="quantity" class="form-control mb-2" placeholder="Quantity">
-    <input type="number" id="buyPrice" class="form-control mb-2" placeholder="Buy Price">
-    <input type="number" id="currentPrice" class="form-control mb-2" placeholder="Current Price">
-    <button id="submitBtn" onclick="addStock()" class="btn btn-primary">Add Stock</button>
-  </div>
-  <div class="card p-3 mb-4">
-  <h4>Portfolio Summary</h4>
-  <p>Total Investment: ₹ <span id="totalInvestment">0</span></p>
-  <p>Total Portfolio Value: ₹ <span id="totalPortfolioValue">0</span></p>
-  <p>Total Profit/Loss: ₹ <span id="totalProfitLoss">0</span></p>
-  <p>Total Stocks: <span id="totalStocks">0</span></p>
-  <p>Total Quantity: <span id="totalQuantity">0</span></p>
+  <!-- AUTH SECTION -->
+  <div id="authSection" class="card p-3 mb-4">
+    <h4>Login</h4>
+    <input type="email" id="email" class="form-control mb-2" placeholder="Email">
+    <input type="password" id="password" class="form-control mb-2" placeholder="Password">
+    <button onclick="login()" class="btn btn-primary">Login</button>
   </div>
 
+  <!-- LOGOUT -->
+  <button id="logoutBtn" onclick="logout()" class="btn btn-danger mb-3" style="display:none;">
+    Logout
+  </button>
 
-  <!-- Stock Table -->
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Quantity</th>
-        <th>Buy Price</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+  <!-- PORTFOLIO SECTION -->
+  <div id="portfolioSection" style="display:none;">
 
-    <tbody id="stockTable"></tbody>
-  </table>
+    <!-- Add Stock -->
+    <div class="card p-3 mb-4">
+      <h4>Add Stock</h4>
+      <input type="text" id="name" class="form-control mb-2" placeholder="Stock Name">
+      <input type="number" id="quantity" class="form-control mb-2" placeholder="Quantity">
+      <input type="number" id="buyPrice" class="form-control mb-2" placeholder="Buy Price">
+      <input type="number" id="currentPrice" class="form-control mb-2" placeholder="Current Price">
+      <button id="submitBtn" onclick="addStock()" class="btn btn-success">
+        Add Stock
+      </button>
+    </div>
+
+    <!-- Summary -->
+    <div class="card p-3 mb-4">
+      <h4>Portfolio Summary</h4>
+      <p>Total Investment: ₹ <span id="totalInvestment">0</span></p>
+      <p>Total Portfolio Value: ₹ <span id="totalPortfolioValue">0</span></p>
+      <p>Total Profit/Loss: ₹ <span id="totalProfitLoss">0</span></p>
+      <p>Total Stocks: <span id="totalStocks">0</span></p>
+      <p>Total Quantity: <span id="totalQuantity">0</span></p>
+    </div>
+
+    <!-- Table -->
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Quantity</th>
+          <th>Buy Price</th>
+          <th>Current Price</th>
+          <th>Profit/Loss</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="stockTable"></tbody>
+    </table>
+
+  </div>
 
 </div>
 

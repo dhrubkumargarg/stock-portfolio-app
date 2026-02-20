@@ -1,40 +1,112 @@
-const API_URL = "http://localhost:5000/api/stocks";
-
+const API_BASE = "http://localhost:5000/api";
 let editingStockId = null;
 
-// Load stocks on page load
-window.onload = fetchStocks;
+/* ===========================
+   🔐 AUTH SECTION
+=========================== */
 
-// 🔹 Fetch all stocks
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await response.json();
+
+  if (response.ok) {
+    localStorage.setItem("token", data.token);
+    showPortfolio();
+  } else {
+    alert(data.message);
+  }
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+
+function showPortfolio() {
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("portfolioSection").style.display = "block";
+  document.getElementById("logoutBtn").style.display = "inline-block";
+  fetchStocks();
+}
+
+window.onload = () => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    showPortfolio();
+  }
+};
+
+/* ===========================
+   🌐 CENTRALIZED API HELPER
+=========================== */
+
+async function apiRequest(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+    ...options.headers
+  };
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  // 🔐 Auto logout if token expired
+  if (response.status === 401) {
+    alert("Session expired. Please login again.");
+    logout();
+    return;
+  }
+
+  return response;
+}
+
+/* ===========================
+   📊 STOCK SECTION
+=========================== */
+
 async function fetchStocks() {
-  const response = await fetch(API_URL);
+  const response = await apiRequest("/stocks");
+  if (!response) return;
+
   const stocks = await response.json();
 
   const table = document.getElementById("stockTable");
   table.innerHTML = "";
 
   stocks.forEach(stock => {
-
     const profitLoss = (stock.currentPrice - stock.buyPrice) * stock.quantity;
 
     const row = `
       <tr>
         <td>${stock.name}</td>
-        <td>${stock.quantity}</td>
-        <td>${stock.buyPrice}</td>
-        <td>${stock.currentPrice}</td>
+        <td>${stock.quantity.toLocaleString()}</td>
+        <td>₹${stock.buyPrice.toLocaleString()}</td>
+        <td>₹${stock.currentPrice.toLocaleString()}</td>
         <td style="color:${profitLoss >= 0 ? 'green' : 'red'}">
-          ${profitLoss}
+          ₹${profitLoss.toLocaleString()}
         </td>
         <td>
-          <button onclick="editStock('${stock._id}', '${stock.name}', ${stock.quantity}, ${stock.buyPrice}, ${stock.currentPrice})" 
-            class="btn btn-warning btn-sm">
-            Edit
-          </button>
-          <button onclick="deleteStock('${stock._id}')" 
-            class="btn btn-danger btn-sm">
-            Delete
-          </button>
+          <button onclick="editStock('${stock._id}', '${stock.name}', ${stock.quantity}, ${stock.buyPrice}, ${stock.currentPrice})"
+            class="btn btn-warning btn-sm">Edit</button>
+          <button onclick="deleteStock('${stock._id}')"
+            class="btn btn-danger btn-sm">Delete</button>
         </td>
       </tr>
     `;
@@ -45,68 +117,51 @@ async function fetchStocks() {
   fetchSummary();
 }
 
-// 🔹 Add or Update Stock
 async function addStock() {
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+
   const name = document.getElementById("name").value.trim();
   const quantity = parseInt(document.getElementById("quantity").value);
   const buyPrice = parseFloat(document.getElementById("buyPrice").value);
   const currentPrice = parseFloat(document.getElementById("currentPrice").value);
 
-  // Validation
-  if (!name) {
-    alert("Stock name is required");
+  if (!name || quantity <= 0 || buyPrice <= 0 || currentPrice <= 0) {
+    alert("Please enter valid values");
+    btn.disabled = false;
     return;
   }
 
-  if (isNaN(quantity) || quantity <= 0) {
-    alert("Quantity must be positive");
-    return;
-  }
-
-  if (isNaN(buyPrice) || buyPrice <= 0) {
-    alert("Buy price must be positive");
-    return;
-  }
-
-  if (isNaN(currentPrice) || currentPrice <= 0) {
-    alert("Current price must be positive");
-    return;
-  }
+  const payload = { name, quantity, buyPrice, currentPrice };
 
   if (editingStockId) {
-    // UPDATE
-    await fetch(`${API_URL}/${editingStockId}`, {
+    await apiRequest(`/stocks/${editingStockId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, quantity, buyPrice, currentPrice })
+      body: JSON.stringify(payload)
     });
 
     editingStockId = null;
-    document.getElementById("submitBtn").innerText = "Add Stock";
-
+    btn.innerText = "Add Stock";
   } else {
-    // ADD
-    await fetch(API_URL, {
+    await apiRequest("/stocks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, quantity, buyPrice, currentPrice })
+      body: JSON.stringify(payload)
     });
   }
 
   clearForm();
   fetchStocks();
+  btn.disabled = false;
 }
 
-// 🔹 Delete stock
 async function deleteStock(id) {
-  await fetch(`${API_URL}/${id}`, {
+  await apiRequest(`/stocks/${id}`, {
     method: "DELETE"
   });
 
   fetchStocks();
 }
 
-// 🔹 Edit stock
 function editStock(id, name, quantity, buyPrice, currentPrice) {
   editingStockId = id;
 
@@ -118,19 +173,28 @@ function editStock(id, name, quantity, buyPrice, currentPrice) {
   document.getElementById("submitBtn").innerText = "Update Stock";
 }
 
-// 🔹 Fetch Portfolio Summary
 async function fetchSummary() {
-  const response = await fetch(`${API_URL}/summary`);
+  const response = await apiRequest("/stocks/summary");
+  if (!response) return;
+
   const summary = await response.json();
 
-  document.getElementById("totalInvestment").innerText = summary.totalInvestment;
-  document.getElementById("totalPortfolioValue").innerText = summary.totalPortfolioValue;
-  document.getElementById("totalProfitLoss").innerText = summary.totalProfitLoss;
-  document.getElementById("totalStocks").innerText = summary.totalStocks;
-  document.getElementById("totalQuantity").innerText = summary.totalQuantity;
+  document.getElementById("totalInvestment").innerText =
+    summary.totalInvestment.toLocaleString();
+
+  document.getElementById("totalPortfolioValue").innerText =
+    summary.totalPortfolioValue.toLocaleString();
+
+  document.getElementById("totalProfitLoss").innerText =
+    summary.totalProfitLoss.toLocaleString();
+
+  document.getElementById("totalStocks").innerText =
+    summary.totalStocks;
+
+  document.getElementById("totalQuantity").innerText =
+    summary.totalQuantity.toLocaleString();
 }
 
-// 🔹 Clear form
 function clearForm() {
   document.getElementById("name").value = "";
   document.getElementById("quantity").value = "";
