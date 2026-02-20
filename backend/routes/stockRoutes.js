@@ -1,3 +1,4 @@
+const protect = require("../middleware/authMiddleware");
 const express = require("express");
 const router = express.Router();
 
@@ -9,19 +10,11 @@ const {
   getSummary
 } = require("../controllers/stockController");
 
-// ➕ Add new stock
-router.post("/", addStock);
+router.post("/", protect, addStock);
+router.get("/summary", protect, getSummary);
+router.get("/", protect, getStocks);
+router.delete("/:id", protect, deleteStock);
+router.put("/:id", protect, updateStock);
 
-// 📊 Get portfolio summary (MUST come before /:id routes)
-router.get("/summary", getSummary);
-
-// 📄 Get all stocks
-router.get("/", getStocks);
-
-// ❌ Delete stock by ID
-router.delete("/:id", deleteStock);
-
-// ✏️ Update stock by ID
-router.put("/:id", updateStock);
 
 module.exports = router;

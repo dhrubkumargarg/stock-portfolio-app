@@ -9,24 +9,25 @@ exports.addStock = async (req, res) => {
       name,
       quantity,
       buyPrice,
-      currentPrice
+      currentPrice,
+      user: req.user   // 🔥 attach logged-in user
     });
 
     const savedStock = await newStock.save();
-
     res.status(201).json(savedStock);
 
   } catch (error) {
-    console.error(error);   // 🔥 important for debugging
+    console.error(error);
     res.status(500).json({ message: "Error adding stock" });
   }
 };
 
 
+
 // Get all stocks
 exports.getStocks = async (req, res) => {
   try {
-    const stocks = await Stock.find();
+    const stocks = await Stock.find({ user: req.user });
     res.status(200).json(stocks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching stocks" });
@@ -74,7 +75,7 @@ exports.updateStock = async (req, res) => {
 // Get portfolio summary
 exports.getSummary = async (req, res) => {
   try {
-    const stocks = await Stock.find();
+    const stocks = await Stock.find({ user: req.user }    );
 
     let totalInvestment = 0;
     let totalQuantity = 0;
