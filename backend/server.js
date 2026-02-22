@@ -6,6 +6,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");   // Import DB connection
 const stockRoutes = require("./routes/stockRoutes");
 const authRoutes = require("./routes/authRoutes");
+const googleAuth = require("./routes/googleAuth");
 
 const app = express();
 
@@ -23,10 +24,10 @@ app.get("/", (req, res) => {
 // Stock routes
 app.use("/api/stocks", stockRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/auth/google", googleAuth);
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-  
