@@ -13,7 +13,13 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://your-frontend-name.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Test route
