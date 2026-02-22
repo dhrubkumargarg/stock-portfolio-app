@@ -1,4 +1,12 @@
 {
+  "name": "stockwise-backend",
+  "version": "1.0.0",
+  "description": "StockWise backend API",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
@@ -10,4 +18,3 @@
     "mongoose": "^9.2.0"
   }
 }
-
