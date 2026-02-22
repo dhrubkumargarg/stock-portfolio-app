@@ -276,7 +276,7 @@ function renderCharts(stocks) {
 
 function handleGoogleLogin(response) {
 
-  fetch("http://localhost:5000/api/auth/google", {
+  fetch(`${API_BASE}/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
