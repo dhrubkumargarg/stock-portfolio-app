@@ -82,37 +82,32 @@ exports.getStocks = async (req, res) => {
 =========================== */
 
 exports.refreshPrices = async (req, res) => {
+  console.log("🔥 Refresh route hit");
+
   try {
     const stocks = await Stock.find({ user: req.user });
+    console.log("Stocks found:", stocks.length);
 
-    for (let stock of stocks) {
-      try {
-        const livePrice = await getLivePrice(stock.name);
+    for (const stock of stocks) {
+      console.log("Refreshing:", stock.name);
 
-        if (livePrice && !isNaN(livePrice)) {
-          stock.currentPrice = livePrice;
-          await stock.save();
-        } else {
-          console.log("Invalid price for:", stock.name);
-        }
+      const livePrice = await getLivePrice(stock.name);
 
-        // prevent rate limit
-        await new Promise(resolve => setTimeout(resolve, 1200));
+      console.log("Live price:", livePrice);
 
-      } catch (err) {
-        console.log("Error updating:", stock.name);
+      if (livePrice) {
+        stock.currentPrice = livePrice;
+        await stock.save();
       }
+
+      await new Promise(r => setTimeout(r, 1200));
     }
 
-    return res.status(200).json({
-      message: "Prices updated successfully"
-    });
+    return res.json({ message: "Prices updated successfully" });
 
-  } catch (error) {
-    console.log("Refresh crashed:", error);
-    return res.status(500).json({
-      message: "Error refreshing prices"
-    });
+  } catch (err) {
+    console.log("❌ Refresh crashed:", err);
+    return res.status(500).json({ message: "Error refreshing prices" });
   }
 };
 /* ===========================
