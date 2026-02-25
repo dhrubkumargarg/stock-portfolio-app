@@ -183,25 +183,30 @@ async function refreshPrices() {
   const refreshBtn = document.getElementById("refreshBtn");
 
   try {
-    refreshBtn.disabled = true;
-    refreshBtn.innerText = "Refreshing...";
+    if (refreshBtn) {
+      refreshBtn.disabled = true;
+      refreshBtn.innerText = "Refreshing...";
+    }
 
     const response = await apiRequest("/stocks/refresh", {
       method: "PUT"
     });
 
     if (response.ok) {
-      await fetchStocks();
       alert("Prices updated successfully!");
+      fetchStocks();
     } else {
-      alert("Failed to refresh prices");
+      alert("Error refreshing prices");
     }
 
   } catch (error) {
+    console.error(error);
     alert("Error refreshing prices");
   } finally {
-    refreshBtn.disabled = false;
-    refreshBtn.innerText = "Refresh Prices";
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.innerText = "Refresh Prices";
+    }
   }
 }
 
