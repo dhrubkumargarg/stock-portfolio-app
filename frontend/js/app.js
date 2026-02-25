@@ -2,9 +2,6 @@ const API_BASE = "https://stockwise-hzy4.onrender.com/api";
 
 let allocationChart;
 let profitChart;
-let refreshInterval = null;
-
-// This will store portfolio P/L history over time
 let portfolioHistory = [];
 
 /* ================= AUTH ================= */
@@ -36,7 +33,6 @@ async function login() {
 
 function logout() {
   localStorage.removeItem("token");
-  if (refreshInterval) clearInterval(refreshInterval);
   location.reload();
 }
 
@@ -46,13 +42,6 @@ function showPortfolio() {
   document.getElementById("logoutBtn").style.display = "inline-block";
 
   fetchStocks();
-
-  if (refreshInterval) clearInterval(refreshInterval);
-
-  refreshInterval = setInterval(async () => {
-    await apiRequest("/stocks/refresh", { method: "PUT" });
-    fetchStocks();
-  }, 60000);
 }
 
 window.onload = () => {
@@ -124,12 +113,11 @@ async function fetchStocks() {
     `;
   });
 
-  // Store profit history for line chart
   const now = new Date().toLocaleTimeString();
   portfolioHistory.push({ time: now, profit: totalProfit });
 
   if (portfolioHistory.length > 15) {
-    portfolioHistory.shift(); // keep last 15 points
+    portfolioHistory.shift();
   }
 
   renderCharts(stocks);
@@ -137,7 +125,7 @@ async function fetchStocks() {
 }
 
 async function addStock() {
-  const name = document.getElementById("name").value.trim();
+  const name = document.getElementById("name").value.trim().toUpperCase();
   const quantity = parseInt(document.getElementById("quantity").value);
 
   if (!name || quantity <= 0) {
@@ -145,13 +133,18 @@ async function addStock() {
     return;
   }
 
-  await apiRequest("/stocks", {
+  const response = await apiRequest("/stocks", {
     method: "POST",
     body: JSON.stringify({ name, quantity })
   });
 
-  clearForm();
-  fetchStocks();
+  if (response.ok) {
+    clearForm();
+    fetchStocks();
+  } else {
+    const data = await response.json();
+    alert(data.message || "Failed to add stock");
+  }
 }
 
 async function deleteStock(id) {
@@ -167,7 +160,6 @@ function clearForm() {
 /* ================= SELL ================= */
 
 async function sellStock(id, maxQty) {
-
   const qty = parseInt(prompt(`Enter quantity to sell (Max: ${maxQty})`));
 
   if (!qty || qty <= 0 || qty > maxQty) {
@@ -181,6 +173,21 @@ async function sellStock(id, maxQty) {
   });
 
   fetchStocks();
+}
+
+/* ================= MANUAL REFRESH BUTTON ================= */
+
+async function refreshPrices() {
+  const response = await apiRequest("/stocks/refresh", {
+    method: "PUT"
+  });
+
+  if (response.ok) {
+    alert("Prices updated successfully!");
+    fetchStocks();
+  } else {
+    alert("Failed to refresh prices");
+  }
 }
 
 /* ================= SUMMARY ================= */
@@ -217,14 +224,12 @@ async function fetchSummary() {
 /* ================= CHARTS ================= */
 
 function renderCharts(stocks) {
-
   const names = stocks.map(s => s.name);
   const allocation = stocks.map(s => s.quantity * s.currentPrice);
 
   if (allocationChart) allocationChart.destroy();
   if (profitChart) profitChart.destroy();
 
-  // Pie chart
   allocationChart = new Chart(
     document.getElementById("allocationChart"),
     {
@@ -238,7 +243,6 @@ function renderCharts(stocks) {
     }
   );
 
-  // Line chart (portfolio P/L over time)
   const labels = portfolioHistory.map(p => p.time);
   const profits = portfolioHistory.map(p => p.profit);
 
@@ -274,8 +278,9 @@ function renderCharts(stocks) {
   );
 }
 
-function handleGoogleLogin(response) {
+/* ================= GOOGLE LOGIN ================= */
 
+function handleGoogleLogin(response) {
   fetch(`${API_BASE}/auth/google`, {
     method: "POST",
     headers: {

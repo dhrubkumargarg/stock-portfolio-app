@@ -1,59 +1,48 @@
 const Stock = require("../models/Stock");
-const axios = require("axios");
+const yahooFinance = require("yahoo-finance2").default;
 
 /* ===========================
-   🔥 LIVE PRICE FUNCTION
+   🔥 LIVE PRICE FUNCTION (YAHOO)
 =========================== */
+
 async function getLivePrice(symbol) {
-
-  console.log("API KEY:", process.env.ALPHA_VANTAGE_API_KEY); // 👈 ADD THIS LINE
-  console.log("Fetching live price for:", symbol);            // optional debug
-
   try {
-    const response = await axios.get(
-      "https://www.alphavantage.co/query",
-      {
-        params: {
-          function: "GLOBAL_QUOTE",
-          symbol: symbol,
-          apikey: process.env.ALPHA_VANTAGE_API_KEY
-        }
-      }
-    );
+    const formattedSymbol = symbol.trim().toUpperCase();
 
-    console.log("API Response:", response.data); // 👈 ADD THIS TOO
+    const quote = await yahooFinance.quote(formattedSymbol);
 
-    if (!response.data["Global Quote"] ||
-        !response.data["Global Quote"]["05. price"]) {
+    if (!quote || !quote.regularMarketPrice) {
       return null;
     }
 
-    return parseFloat(response.data["Global Quote"]["05. price"]);
+    return quote.regularMarketPrice;
 
   } catch (error) {
-    console.log("Live price fetch failed:", error.message);
+    console.log("Yahoo fetch failed:", error.message);
     return null;
   }
 }
 
 /* ===========================
-   ➕ ADD STOCK (LIVE PRICE)
+   ➕ ADD STOCK
 =========================== */
 
 exports.addStock = async (req, res) => {
   try {
     const { name, quantity } = req.body;
 
-    const livePrice = await getLivePrice(name);
+    const symbol = name.trim().toUpperCase();
+
+    const livePrice = await getLivePrice(symbol);
 
     if (!livePrice) {
       return res.status(400).json({ message: "Invalid symbol" });
     }
 
     const newStock = new Stock({
-      name,
+      name: symbol,
       quantity,
-      buyPrice: livePrice,     // 👈 Buy at live price
+      buyPrice: livePrice,
       currentPrice: livePrice,
       user: req.user
     });
@@ -76,6 +65,30 @@ exports.getStocks = async (req, res) => {
     res.status(200).json(stocks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching stocks" });
+  }
+};
+
+/* ===========================
+   🔄 REFRESH PRICES (Manual Button)
+=========================== */
+
+exports.refreshPrices = async (req, res) => {
+  try {
+    const stocks = await Stock.find({ user: req.user });
+
+    for (let stock of stocks) {
+      const livePrice = await getLivePrice(stock.name);
+
+      if (livePrice) {
+        stock.currentPrice = livePrice;
+        await stock.save();
+      }
+    }
+
+    res.json({ message: "Prices updated successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error refreshing prices" });
   }
 };
 
@@ -106,7 +119,6 @@ exports.updateStock = async (req, res) => {
     }
 
     const updatedStock = await stock.save();
-
     res.json(updatedStock);
 
   } catch (error) {
@@ -137,57 +149,8 @@ exports.deleteStock = async (req, res) => {
 };
 
 /* ===========================
-   📊 PORTFOLIO SUMMARY
+   💰 SELL STOCK
 =========================== */
-
-exports.getSummary = async (req, res) => {
-  try {
-    const stocks = await Stock.find({ user: req.user });
-
-    let totalInvestment = 0;
-    let totalPortfolioValue = 0;
-    let totalQuantity = 0;
-
-    stocks.forEach(stock => {
-      totalInvestment += stock.buyPrice * stock.quantity;
-      totalPortfolioValue += stock.currentPrice * stock.quantity;
-      totalQuantity += stock.quantity;
-    });
-
-    const totalProfitLoss = totalPortfolioValue - totalInvestment;
-
-    res.json({
-      totalInvestment,
-      totalPortfolioValue,
-      totalProfitLoss,
-      totalStocks: stocks.length,
-      totalQuantity
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: "Error calculating summary" });
-  }
-};
-
-
-exports.refreshPrices = async (req, res) => {
-  try {
-    const stocks = await Stock.find({ user: req.user });
-
-    for (let stock of stocks) {
-      const livePrice = await getLivePrice(stock.name);
-      if (livePrice) {
-        stock.currentPrice = livePrice;
-        await stock.save();
-      }
-    }
-
-    res.json({ message: "Prices updated" });
-
-  } catch (error) {
-    res.status(500).json({ message: "Error refreshing prices" });
-  }
-};
 
 exports.sellStock = async (req, res) => {
   try {
@@ -218,5 +181,31 @@ exports.sellStock = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: "Sell failed" });
+  }
+};
+
+exports.getSummary = async (req, res) => {
+  try {
+    const stocks = await Stock.find({ user: req.user });
+
+    let totalInvestment = 0;
+    let totalPortfolioValue = 0;
+
+    stocks.forEach(stock => {
+      totalInvestment += stock.buyPrice * stock.quantity;
+      totalPortfolioValue += stock.currentPrice * stock.quantity;
+    });
+
+    const totalProfitLoss = totalPortfolioValue - totalInvestment;
+
+    res.json({
+      totalInvestment,
+      totalPortfolioValue,
+      totalProfitLoss,
+      totalStocks: stocks.length
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error calculating summary" });
   }
 };
