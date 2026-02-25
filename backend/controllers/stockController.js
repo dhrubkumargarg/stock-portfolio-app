@@ -1,3 +1,4 @@
+const axios = require("axios");
 const Stock = require("../models/Stock");
 const YahooFinance = require("yahoo-finance2").default;
 
@@ -11,18 +12,23 @@ async function getLivePrice(symbol) {
   try {
     const formattedSymbol = symbol.trim().toUpperCase();
 
-    const quote = await yahooFinance.quote(formattedSymbol);
+    const response = await axios.get("https://api.twelvedata.com/price", {
+      params: {
+        symbol: formattedSymbol,
+        apikey: process.env.TWELVEDATA_API_KEY
+      }
+    });
 
-    console.log("Yahoo Quote:", quote);
+    console.log("TwelveData response:", response.data);
 
-    if (!quote || quote.regularMarketPrice == null) {
+    if (!response.data || response.data.status === "error") {
       return null;
     }
 
-    return quote.regularMarketPrice;
+    return parseFloat(response.data.price);
 
   } catch (error) {
-    console.log("Yahoo fetch failed:", error.message);
+    console.log("TwelveData fetch failed:", error.message);
     return null;
   }
 }
@@ -86,6 +92,8 @@ exports.refreshPrices = async (req, res) => {
         stock.currentPrice = livePrice;
         await stock.save();
       }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
 
     res.json({ message: "Prices updated successfully" });

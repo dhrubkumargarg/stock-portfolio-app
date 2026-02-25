@@ -177,16 +177,31 @@ async function sellStock(id, maxQty) {
 
 /* ================= MANUAL REFRESH BUTTON ================= */
 
-async function refreshPrices() {
-  const response = await apiRequest("/stocks/refresh", {
-    method: "PUT"
-  });
+/* ================= MANUAL REFRESH BUTTON ================= */
 
-  if (response.ok) {
-    alert("Prices updated successfully!");
-    fetchStocks();
-  } else {
-    alert("Failed to refresh prices");
+async function refreshPrices() {
+  const refreshBtn = document.getElementById("refreshBtn");
+
+  try {
+    refreshBtn.disabled = true;
+    refreshBtn.innerText = "Refreshing...";
+
+    const response = await apiRequest("/stocks/refresh", {
+      method: "PUT"
+    });
+
+    if (response.ok) {
+      await fetchStocks();
+      alert("Prices updated successfully!");
+    } else {
+      alert("Failed to refresh prices");
+    }
+
+  } catch (error) {
+    alert("Error refreshing prices");
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.innerText = "Refresh Prices";
   }
 }
 
