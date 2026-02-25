@@ -1,5 +1,6 @@
 const Stock = require("../models/Stock");
 const yahooFinance = require("yahoo-finance2").default;
+const yahooFinance = new YahooFinance();
 
 /* ===========================
    🔥 LIVE PRICE FUNCTION (YAHOO)
@@ -11,7 +12,9 @@ async function getLivePrice(symbol) {
 
     const quote = await yahooFinance.quote(formattedSymbol);
 
-    if (!quote || !quote.regularMarketPrice) {
+    console.log("Yahoo Quote:", quote);
+
+    if (!quote || quote.regularMarketPrice == null) {
       return null;
     }
 
@@ -22,7 +25,6 @@ async function getLivePrice(symbol) {
     return null;
   }
 }
-
 /* ===========================
    ➕ ADD STOCK
 =========================== */
